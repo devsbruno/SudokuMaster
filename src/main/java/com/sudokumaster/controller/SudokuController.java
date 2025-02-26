@@ -168,7 +168,7 @@ public class SudokuController {
     /**
      * Opens a dialog to select difficulty and generate a new puzzle.
      */
-    private void showNewGameDialog() {
+    public void showNewGameDialog() {
         String[] options = {"Easy", "Medium", "Hard"};
         int choice = JOptionPane.showOptionDialog(
                 view,

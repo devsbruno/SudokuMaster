@@ -9,10 +9,12 @@ import com.sudokumaster.controller.SudokuController;
  */
 public class Main {
     public static void main(String[] args) {
-        // Initialize the model, view, and controller.
+        // Initialize model, view, and controller.
         SudokuBoard board = new SudokuBoard();
         SudokuView view = new SudokuView();
         SudokuController controller = new SudokuController(board, view);
-        // The application window is displayed upon instantiation of SudokuView.
+
+        // Immediately prompt the user to select difficulty when the game starts.
+        controller.showNewGameDialog();
     }
 }
