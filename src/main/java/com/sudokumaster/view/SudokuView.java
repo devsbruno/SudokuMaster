@@ -6,7 +6,7 @@ import java.awt.*;
 /**
  * Basic GUI for the Sudoku game.
  * This class sets up the main frame, board grid, numeric input buttons,
- * and an options menu with a dark mode toggle.
+ * and an options menu with a dark mode toggle and a new game option.
  */
 public class SudokuView extends JFrame {
 
@@ -15,6 +15,7 @@ public class SudokuView extends JFrame {
     private JPanel numberPanel;
     private JMenuBar menuBar;
     private JCheckBoxMenuItem darkModeToggle;
+    private JMenuItem newGameItem;
 
     /**
      * Constructor: Initializes the Sudoku game window.
@@ -37,7 +38,7 @@ public class SudokuView extends JFrame {
     }
 
     /**
-     * Initializes the menu bar and adds a dark mode toggle option.
+     * Initializes the menu bar and adds a dark mode toggle option and new game option.
      */
     private void initMenu() {
         menuBar = new JMenuBar();
@@ -46,6 +47,10 @@ public class SudokuView extends JFrame {
         darkModeToggle = new JCheckBoxMenuItem("Dark Mode");
         darkModeToggle.addActionListener(e -> toggleDarkMode(darkModeToggle.isSelected()));
         optionsMenu.add(darkModeToggle);
+
+        // Add the New Game menu item
+        newGameItem = new JMenuItem("New Game");
+        optionsMenu.add(newGameItem);
 
         menuBar.add(optionsMenu);
         setJMenuBar(menuBar);
@@ -99,6 +104,19 @@ public class SudokuView extends JFrame {
         numberPanel.setForeground(foregroundColor);
     }
 
+    /**
+     * Updates the board display based on the provided board state.
+     *
+     * @param board 2D int array representing the current state of the Sudoku board.
+     */
+    public void updateBoard(int[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                boardCells[i][j].setText(board[i][j] == 0 ? "" : String.valueOf(board[i][j]));
+            }
+        }
+    }
+
     // Getters for UI components to be used by the controller
     public JButton[][] getBoardCells() {
         return boardCells;
@@ -110,5 +128,14 @@ public class SudokuView extends JFrame {
 
     public JCheckBoxMenuItem getDarkModeToggle() {
         return darkModeToggle;
+    }
+
+    /**
+     * Getter for the New Game menu item.
+     *
+     * @return JMenuItem for starting a new game.
+     */
+    public JMenuItem getNewGameItem() {
+        return newGameItem;
     }
 }
