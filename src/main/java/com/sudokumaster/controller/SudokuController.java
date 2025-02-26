@@ -12,12 +12,14 @@ import java.awt.event.ActionListener;
 
 /**
  * Controller class that coordinates interactions between the model and the view.
- * It attaches event listeners to the numeric buttons and the new game option.
+ * It attaches event listeners to the numeric buttons, board cells, and the new game option.
  */
 public class SudokuController {
 
     private SudokuBoard board;
     private final SudokuView view;
+    private int selectedRow = -1;
+    private int selectedCol = -1;
 
     /**
      * Constructor: Initializes the controller with the given model and view.
@@ -32,32 +34,83 @@ public class SudokuController {
     }
 
     /**
-     * Attaches action listeners to the number buttons and the new game menu item.
+     * Attaches action listeners to the number buttons, board cells, and the new game menu item.
      */
     private void initController() {
-        // Attach listeners to numeric buttons
+        // Attach listeners to numeric buttons.
         for (Component comp : view.getNumberPanel().getComponents()) {
             if (comp instanceof JButton) {
                 JButton numberButton = (JButton) comp;
                 numberButton.addActionListener(new NumberButtonListener());
             }
         }
-        // Attach listener to the New Game menu item
+        // Attach listener to the New Game menu item.
         view.getNewGameItem().addActionListener(e -> showNewGameDialog());
+
+        // Attach listeners to board cells for selection.
+        JButton[][] boardCells = view.getBoardCells();
+        for (int row = 0; row < boardCells.length; row++) {
+            for (int col = 0; col < boardCells[row].length; col++) {
+                boardCells[row][col].addActionListener(new BoardCellListener(row, col));
+            }
+        }
+    }
+
+    /**
+     * Listener for board cell clicks. Handles cell selection.
+     */
+    private class BoardCellListener implements ActionListener {
+        private final int row;
+        private final int col;
+
+        public BoardCellListener(int row, int col) {
+            this.row = row;
+            this.col = col;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            // Reset previous selected cell border, if any.
+            if (selectedRow != -1 && selectedCol != -1) {
+                view.getBoardCells()[selectedRow][selectedCol].setBorder(UIManager.getBorder("Button.border"));
+            }
+            selectedRow = row;
+            selectedCol = col;
+            // Highlight the newly selected cell.
+            JButton cell = view.getBoardCells()[row][col];
+            cell.setBorder(BorderFactory.createLineBorder(Color.BLUE, 2));
+        }
     }
 
     /**
      * Listener for number buttons.
-     * Currently, it prints the selected number to the console.
-     * Future implementation: update the selected cell in the board using the model.
+     * If a cell is selected, attempts to insert the number.
+     * If the move is invalid, displays the number in red.
      */
     private class NumberButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
+            if (selectedRow == -1 || selectedCol == -1) {
+                // No cell selected; do nothing or alert the user.
+                JOptionPane.showMessageDialog(view, "Please select a cell first.", "No Cell Selected", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             JButton source = (JButton) e.getSource();
-            String numberStr = source.getText();
-            System.out.println("Number selected: " + numberStr);
-            // Future implementation: integrate with cell selection and update board accordingly.
+            int number = Integer.parseInt(source.getText());
+
+            // Reset the cell's foreground color to default (black).
+            view.getBoardCells()[selectedRow][selectedCol].setForeground(Color.BLACK);
+
+            if (board.isValidMove(selectedRow, selectedCol, number)) {
+                // Valid move: update the model.
+                board.placeNumber(selectedRow, selectedCol, number);
+                view.updateBoard(board.getBoard());
+            } else {
+                // Invalid move: show the number in red on the selected cell.
+                JButton selectedCell = view.getBoardCells()[selectedRow][selectedCol];
+                selectedCell.setText(String.valueOf(number));
+                selectedCell.setForeground(Color.RED);
+            }
         }
     }
 
@@ -78,7 +131,7 @@ public class SudokuController {
         );
 
         if (choice >= 0) {
-            Difficulty selectedDifficulty;
+            com.sudokumaster.model.Difficulty selectedDifficulty;
             switch (choice) {
                 case 0:
                     selectedDifficulty = Difficulty.EASY;
@@ -93,10 +146,12 @@ public class SudokuController {
                     selectedDifficulty = Difficulty.EASY;
                     break;
             }
-            // Generate new puzzle using the selected difficulty
+            // Generate new puzzle using the selected difficulty.
             board = PuzzleGenerator.generatePuzzle(selectedDifficulty);
-            // Update the view with the new board state
             view.updateBoard(board.getBoard());
+            // Reset any cell selection.
+            selectedRow = -1;
+            selectedCol = -1;
         }
     }
 }
