@@ -44,7 +44,7 @@ public class SudokuView extends JFrame {
         darkModeToggle.addActionListener(e -> toggleDarkMode(darkModeToggle.isSelected()));
         optionsMenu.add(darkModeToggle);
 
-        // Annotation Mode toggle (for future implementation)
+        // Annotation Mode toggle (for annotation support)
         annotationModeToggle = new JCheckBoxMenuItem("Annotation Mode");
         optionsMenu.add(annotationModeToggle);
 
@@ -102,13 +102,57 @@ public class SudokuView extends JFrame {
     }
 
     /**
-     * Updates the board display using the provided board state.
-     * This simple update method is a placeholder.
+     * Updates the board display using only the current board state.
+     * This is a simplified version.
      */
     public void updateBoard(int[][] board) {
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
                 boardCells[i][j].setText(board[i][j] == 0 ? "" : String.valueOf(board[i][j]));
+            }
+        }
+    }
+
+    /**
+     * Overloaded updateBoard method.
+     * Displays the current board state, using the fixedBoard to differentiate fixed numbers (black)
+     * from user inputs (blue). Annotations for empty cells are also displayed.
+     *
+     * @param board      The current board state.
+     * @param fixedBoard The initial puzzle state (fixed numbers).
+     * @param annotations The annotations for each cell.
+     */
+    public void updateBoard(int[][] board, int[][] fixedBoard, java.util.Set<Integer>[][] annotations) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] != 0) {
+                    boardCells[i][j].setText(String.valueOf(board[i][j]));
+                    // If the number is fixed, display in BLACK; if user input, display in BLUE.
+                    if (fixedBoard[i][j] == board[i][j]) {
+                        boardCells[i][j].setForeground(Color.BLACK);
+                    } else {
+                        boardCells[i][j].setForeground(new Color(0, 0, 150)); // User input in dark blue.
+                    }
+                    boardCells[i][j].setFont(new Font("Arial", Font.BOLD, 20));
+                } else if (!annotations[i][j].isEmpty()) {
+                    StringBuilder sb = new StringBuilder("<html><small>");
+                    java.util.List<Integer> sortedNotes = new java.util.ArrayList<>(annotations[i][j]);
+                    java.util.Collections.sort(sortedNotes);
+                    for (Integer note : sortedNotes) {
+                        sb.append(note).append(" ");
+                    }
+                    sb.append("</small></html>");
+                    boardCells[i][j].setText(sb.toString());
+                    boardCells[i][j].setFont(new Font("Arial", Font.PLAIN, 12));
+                } else {
+                    boardCells[i][j].setText("");
+                }
+                // Reapply the cell borders.
+                int top = (i % 3 == 0) ? 3 : 1;
+                int left = (j % 3 == 0) ? 3 : 1;
+                int bottom = (i == 8) ? 3 : 1;
+                int right = (j == 8) ? 3 : 1;
+                boardCells[i][j].setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
             }
         }
     }
