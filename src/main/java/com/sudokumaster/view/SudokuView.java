@@ -2,6 +2,9 @@ package com.sudokumaster.view;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -45,7 +48,7 @@ public class SudokuView extends JFrame {
         darkModeToggle.addActionListener(e -> toggleDarkMode(darkModeToggle.isSelected()));
         optionsMenu.add(darkModeToggle);
 
-        // Annotation Mode toggle (for future implementation)
+        // Annotation Mode toggle (for annotation support)
         annotationModeToggle = new JCheckBoxMenuItem("Annotation Mode");
         optionsMenu.add(annotationModeToggle);
 
@@ -67,7 +70,7 @@ public class SudokuView extends JFrame {
             for (int j = 0; j < 9; j++) {
                 JButton cell = new JButton("");
                 cell.setFont(new Font("Arial", Font.BOLD, 20));
-                // Define borders: thicker borders at the beginning of a 3x3 block.
+                // Define borders: thicker borders at the beginning of each 3x3 block.
                 int top = (i % 3 == 0) ? 3 : 1;
                 int left = (j % 3 == 0) ? 3 : 1;
                 int bottom = (i == 8) ? 3 : 1;
@@ -103,13 +106,56 @@ public class SudokuView extends JFrame {
     }
 
     /**
-     * Updates the board display using the provided board state.
-     * This simple update method is a placeholder.
+     * Simple updateBoard method using the current board state.
      */
-    public void updateBoard(int[][] board, Set<Integer>[][] annotations) {
+    public void updateBoard(int[][] board) {
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
                 boardCells[i][j].setText(board[i][j] == 0 ? "" : String.valueOf(board[i][j]));
+            }
+        }
+    }
+
+    /**
+     * Overloaded updateBoard method.
+     * Differentiates fixed numbers (displayed in BLACK) from user inputs (displayed in DARK BLUE).
+     * Displays annotations (if any) in GRAY.
+     *
+     * @param board       The current board state.
+     * @param fixedBoard  The initial puzzle state (fixed numbers).
+     * @param annotations The annotations for each cell.
+     */
+    public void updateBoard(int[][] board, int[][] fixedBoard, Set<Integer>[][] annotations) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                if (board[i][j] != 0) {
+                    boardCells[i][j].setText(String.valueOf(board[i][j]));
+                    if (fixedBoard != null && board[i][j] == fixedBoard[i][j]) {
+                        boardCells[i][j].setForeground(Color.BLACK);
+                    } else {
+                        boardCells[i][j].setForeground(new Color(0, 0, 150)); // User input in dark blue.
+                    }
+                    boardCells[i][j].setFont(new Font("Arial", Font.BOLD, 20));
+                } else if (annotations != null && !annotations[i][j].isEmpty()) {
+                    StringBuilder sb = new StringBuilder("<html><small>");
+                    List<Integer> sortedNotes = new ArrayList<>(annotations[i][j]);
+                    Collections.sort(sortedNotes);
+                    for (Integer note : sortedNotes) {
+                        sb.append(note).append(" ");
+                    }
+                    sb.append("</small></html>");
+                    boardCells[i][j].setText(sb.toString());
+                    boardCells[i][j].setFont(new Font("Arial", Font.PLAIN, 12));
+                    boardCells[i][j].setForeground(Color.GRAY);
+                } else {
+                    boardCells[i][j].setText("");
+                }
+                // Reapply the cell borders.
+                int top = (i % 3 == 0) ? 3 : 1;
+                int left = (j % 3 == 0) ? 3 : 1;
+                int bottom = (i == 8) ? 3 : 1;
+                int right = (j == 8) ? 3 : 1;
+                boardCells[i][j].setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
             }
         }
     }

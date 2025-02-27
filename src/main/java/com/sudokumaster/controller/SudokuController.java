@@ -4,7 +4,6 @@ import com.sudokumaster.model.Difficulty;
 import com.sudokumaster.model.PuzzleGenerator;
 import com.sudokumaster.model.SudokuBoard;
 import com.sudokumaster.view.SudokuView;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -20,7 +19,8 @@ public class SudokuController {
     private final SudokuView view;
     private int selectedRow = -1;
     private int selectedCol = -1;
-    private int[][] initialBoardState;
+    // Stores the fixed numbers of the puzzle (the initial board state).
+    private int[][] fixedBoard;
 
     public SudokuController(SudokuBoard board, SudokuView view) {
         this.board = board;
@@ -57,6 +57,7 @@ public class SudokuController {
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            // Remove highlight from previously selected cell.
             if (selectedRow != -1 && selectedCol != -1) {
                 view.getBoardCells()[selectedRow][selectedCol].setBorder(UIManager.getBorder("Button.border"));
             }
@@ -77,24 +78,26 @@ public class SudokuController {
             }
             JButton source = (JButton) e.getSource();
             int number = Integer.parseInt(source.getText());
-            // Check if Annotation Mode is active.
+            // If Annotation Mode is active, toggle annotation.
             if (view.getAnnotationModeToggle().isSelected()) {
                 board.toggleAnnotation(selectedRow, selectedCol, number);
-                view.updateBoard(board.getBoard(), board.getAnnotations());
             } else {
                 view.getBoardCells()[selectedRow][selectedCol].setForeground(Color.BLACK);
                 if (board.isValidMove(selectedRow, selectedCol, number)) {
                     board.placeNumber(selectedRow, selectedCol, number);
-                    view.updateBoard(board.getBoard(), board.getAnnotations());
-                    if (board.isSolved()) {
-                        showGameCompletedDialog();
-                    }
                 } else {
+                    // Show error: display number in red.
                     JButton selectedCell = view.getBoardCells()[selectedRow][selectedCol];
                     selectedCell.setText(String.valueOf(number));
                     selectedCell.setForeground(Color.RED);
                 }
-                updateGuides();
+            }
+            // Update the board display using the fixed board for color differentiation.
+            view.updateBoard(board.getBoard(), fixedBoard, board.getAnnotations());
+            updateGuides();
+            // Check for puzzle completion if not in annotation mode.
+            if (!view.getAnnotationModeToggle().isSelected() && board.isSolved()) {
+                showGameCompletedDialog();
             }
         }
     }
@@ -158,11 +161,12 @@ public class SudokuController {
                     break;
             }
             board = PuzzleGenerator.generatePuzzle(selectedDifficulty);
-            view.updateBoard(board.getBoard(), board.getAnnotations());
+            // Store a deep copy of the generated puzzle as fixed numbers.
+            fixedBoard = deepCopy(board.getBoard());
+            view.updateBoard(board.getBoard(), fixedBoard, board.getAnnotations());
             selectedRow = -1;
             selectedCol = -1;
             resetNumberButtonHighlights();
-            initialBoardState = deepCopy(board.getBoard());
         }
     }
 
@@ -179,8 +183,8 @@ public class SudokuController {
                 options[0]
         );
         if (choice == JOptionPane.YES_OPTION) {
-            board.resetBoard(deepCopy(initialBoardState));
-            view.updateBoard(board.getBoard(), board.getAnnotations());
+            board.resetBoard(deepCopy(fixedBoard));
+            view.updateBoard(board.getBoard(), fixedBoard, board.getAnnotations());
             resetNumberButtonHighlights();
         } else if (choice == JOptionPane.NO_OPTION) {
             showNewGameDialog();
