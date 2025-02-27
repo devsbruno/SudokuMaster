@@ -133,7 +133,7 @@ public class SudokuView extends JFrame {
                     if (fixedBoard != null && board[i][j] == fixedBoard[i][j]) {
                         boardCells[i][j].setForeground(Color.BLACK);
                     } else {
-                        boardCells[i][j].setForeground(new Color(0, 0, 150)); // User input in dark blue.
+                        boardCells[i][j].setForeground(new Color(0, 0, 250)); // User input in dark blue.
                     }
                     boardCells[i][j].setFont(new Font("Arial", Font.BOLD, 20));
                 } else if (annotations != null && !annotations[i][j].isEmpty()) {
