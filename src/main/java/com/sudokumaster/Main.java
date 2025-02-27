@@ -14,6 +14,6 @@ public class Main {
         SudokuView view = new SudokuView();
         SudokuController controller = new SudokuController(board, view);
 
-
+        controller.showNewGameDialog();
     }
 }

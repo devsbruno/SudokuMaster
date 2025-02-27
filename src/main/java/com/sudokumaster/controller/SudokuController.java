@@ -129,7 +129,7 @@ public class SudokuController {
         }
     }
 
-    private void showNewGameDialog() {
+    public void showNewGameDialog() {
         String[] options = {"Easy", "Medium", "Hard"};
         int choice = JOptionPane.showOptionDialog(
                 view,
