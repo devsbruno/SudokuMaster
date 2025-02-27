@@ -14,7 +14,6 @@ public class Main {
         SudokuView view = new SudokuView();
         SudokuController controller = new SudokuController(board, view);
 
-        // Immediately prompt the user to select difficulty when the game starts.
-        controller.showNewGameDialog();
+
     }
 }

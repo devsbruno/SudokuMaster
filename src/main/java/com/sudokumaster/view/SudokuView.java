@@ -17,6 +17,7 @@ public class SudokuView extends JFrame {
     private JCheckBoxMenuItem darkModeToggle;
     private JMenuItem newGameItem;
     private JCheckBoxMenuItem showGuidesToggle;
+    // New: Annotation Mode toggle.
     private JCheckBoxMenuItem annotationModeToggle;
 
     public SudokuView() {
@@ -44,7 +45,7 @@ public class SudokuView extends JFrame {
         darkModeToggle.addActionListener(e -> toggleDarkMode(darkModeToggle.isSelected()));
         optionsMenu.add(darkModeToggle);
 
-        // Annotation Mode toggle (for annotation support)
+        // Add Annotation Mode toggle.
         annotationModeToggle = new JCheckBoxMenuItem("Annotation Mode");
         optionsMenu.add(annotationModeToggle);
 
@@ -61,17 +62,10 @@ public class SudokuView extends JFrame {
     private void initBoard() {
         boardPanel = new JPanel(new GridLayout(9, 9));
         boardCells = new JButton[9][9];
-
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 JButton cell = new JButton("");
                 cell.setFont(new Font("Arial", Font.BOLD, 20));
-                // Define borders: thicker borders at the beginning of a 3x3 block.
-                int top = (i % 3 == 0) ? 3 : 1;
-                int left = (j % 3 == 0) ? 3 : 1;
-                int bottom = (i == 8) ? 3 : 1;
-                int right = (j == 8) ? 3 : 1;
-                cell.setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
                 boardCells[i][j] = cell;
                 boardPanel.add(cell);
             }
@@ -102,37 +96,14 @@ public class SudokuView extends JFrame {
     }
 
     /**
-     * Updates the board display using only the current board state.
-     * This is a simplified version.
+     * Overloaded updateBoard to display annotations for empty cells.
+     * If a cell is empty and has annotations, displays them using HTML (small font).
      */
-    public void updateBoard(int[][] board) {
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                boardCells[i][j].setText(board[i][j] == 0 ? "" : String.valueOf(board[i][j]));
-            }
-        }
-    }
-
-    /**
-     * Overloaded updateBoard method.
-     * Displays the current board state, using the fixedBoard to differentiate fixed numbers (black)
-     * from user inputs (blue). Annotations for empty cells are also displayed.
-     *
-     * @param board      The current board state.
-     * @param fixedBoard The initial puzzle state (fixed numbers).
-     * @param annotations The annotations for each cell.
-     */
-    public void updateBoard(int[][] board, int[][] fixedBoard, java.util.Set<Integer>[][] annotations) {
+    public void updateBoard(int[][] board, java.util.Set<Integer>[][] annotations) {
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board[i].length; j++) {
                 if (board[i][j] != 0) {
                     boardCells[i][j].setText(String.valueOf(board[i][j]));
-                    // If the number is fixed, display in BLACK; if user input, display in BLUE.
-                    if (fixedBoard[i][j] == board[i][j]) {
-                        boardCells[i][j].setForeground(Color.BLACK);
-                    } else {
-                        boardCells[i][j].setForeground(new Color(0, 0, 150)); // User input in dark blue.
-                    }
                     boardCells[i][j].setFont(new Font("Arial", Font.BOLD, 20));
                 } else if (!annotations[i][j].isEmpty()) {
                     StringBuilder sb = new StringBuilder("<html><small>");
@@ -147,12 +118,19 @@ public class SudokuView extends JFrame {
                 } else {
                     boardCells[i][j].setText("");
                 }
-                // Reapply the cell borders.
-                int top = (i % 3 == 0) ? 3 : 1;
-                int left = (j % 3 == 0) ? 3 : 1;
-                int bottom = (i == 8) ? 3 : 1;
-                int right = (j == 8) ? 3 : 1;
-                boardCells[i][j].setBorder(BorderFactory.createMatteBorder(top, left, bottom, right, Color.BLACK));
+                boardCells[i][j].setBorder(UIManager.getBorder("Button.border"));
+            }
+        }
+    }
+
+    /**
+     * Existing updateBoard method (without annotations).
+     */
+    public void updateBoard(int[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board[i].length; j++) {
+                boardCells[i][j].setText(board[i][j] == 0 ? "" : String.valueOf(board[i][j]));
+                boardCells[i][j].setBorder(UIManager.getBorder("Button.border"));
             }
         }
     }

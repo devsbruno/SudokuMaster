@@ -12,8 +12,7 @@ import java.awt.event.ActionListener;
 
 /**
  * Controller class that coordinates interactions between the model and the view.
- * It attaches event listeners to numeric buttons, board cells, new game option,
- * and handles guide highlighting for valid moves.
+ * It handles numeric input, board cell selection, game flow, and annotation mode.
  */
 public class SudokuController {
 
@@ -21,35 +20,24 @@ public class SudokuController {
     private final SudokuView view;
     private int selectedRow = -1;
     private int selectedCol = -1;
-    // Stores the initial state of the current puzzle for restarting.
     private int[][] initialBoardState;
 
-    /**
-     * Constructor: Initializes the controller with the given model and view.
-     *
-     * @param board the Sudoku board model.
-     * @param view  the GUI view.
-     */
     public SudokuController(SudokuBoard board, SudokuView view) {
         this.board = board;
         this.view = view;
         initController();
     }
 
-    /**
-     * Attaches action listeners to numeric buttons, board cells, and the new game menu item.
-     */
     private void initController() {
-        // Attach listeners to numeric buttons.
+        // Attach listeners to number buttons.
         for (Component comp : view.getNumberPanel().getComponents()) {
             if (comp instanceof JButton) {
                 JButton numberButton = (JButton) comp;
                 numberButton.addActionListener(new NumberButtonListener());
             }
         }
-        // Attach listener to the New Game menu item.
         view.getNewGameItem().addActionListener(e -> showNewGameDialog());
-        // Attach listeners to board cells for selection.
+        // Attach listeners to board cells.
         JButton[][] boardCells = view.getBoardCells();
         for (int row = 0; row < boardCells.length; row++) {
             for (int col = 0; col < boardCells[row].length; col++) {
@@ -58,9 +46,6 @@ public class SudokuController {
         }
     }
 
-    /**
-     * Listener for board cell clicks, handling cell selection and highlighting.
-     */
     private class BoardCellListener implements ActionListener {
         private final int row;
         private final int col;
@@ -72,25 +57,17 @@ public class SudokuController {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            // Remove border from previously selected cell.
             if (selectedRow != -1 && selectedCol != -1) {
                 view.getBoardCells()[selectedRow][selectedCol].setBorder(UIManager.getBorder("Button.border"));
             }
             selectedRow = row;
             selectedCol = col;
-            // Highlight the selected cell with a blue border.
             JButton cell = view.getBoardCells()[row][col];
             cell.setBorder(BorderFactory.createLineBorder(Color.BLUE, 2));
-            // Update guides if the option is enabled.
             updateGuides();
         }
     }
 
-    /**
-     * Listener for number buttons.
-     * Inserts the number into the selected cell if valid; otherwise, shows it in red.
-     * After a valid move, checks if the puzzle is solved.
-     */
     private class NumberButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -100,75 +77,59 @@ public class SudokuController {
             }
             JButton source = (JButton) e.getSource();
             int number = Integer.parseInt(source.getText());
-            // Reset cell's text color to black.
-            view.getBoardCells()[selectedRow][selectedCol].setForeground(Color.BLACK);
-
-            if (board.isValidMove(selectedRow, selectedCol, number)) {
-                board.placeNumber(selectedRow, selectedCol, number);
-                view.updateBoard(board.getBoard());
-                // Check if the puzzle is completed.
-                if (board.isSolved()) {
-                    showGameCompletedDialog();
-                }
+            // Check if Annotation Mode is active.
+            if (view.getAnnotationModeToggle().isSelected()) {
+                board.toggleAnnotation(selectedRow, selectedCol, number);
+                view.updateBoard(board.getBoard(), board.getAnnotations());
             } else {
-                // Invalid move: display the number in red.
-                JButton selectedCell = view.getBoardCells()[selectedRow][selectedCol];
-                selectedCell.setText(String.valueOf(number));
-                selectedCell.setForeground(Color.RED);
+                view.getBoardCells()[selectedRow][selectedCol].setForeground(Color.BLACK);
+                if (board.isValidMove(selectedRow, selectedCol, number)) {
+                    board.placeNumber(selectedRow, selectedCol, number);
+                    view.updateBoard(board.getBoard(), board.getAnnotations());
+                    if (board.isSolved()) {
+                        showGameCompletedDialog();
+                    }
+                } else {
+                    JButton selectedCell = view.getBoardCells()[selectedRow][selectedCol];
+                    selectedCell.setText(String.valueOf(number));
+                    selectedCell.setForeground(Color.RED);
+                }
+                updateGuides();
             }
-            // After insertion, update the guides.
-            updateGuides();
         }
     }
 
-    /**
-     * Updates the guide highlighting for numeric buttons based on the selected cell.
-     * If "Show Guides" is enabled, highlights buttons corresponding to valid moves.
-     */
     private void updateGuides() {
-        // If no cell is selected, reset all number buttons.
         if (selectedRow == -1 || selectedCol == -1) {
             resetNumberButtonHighlights();
             return;
         }
-        // Check if "Show Guides" is enabled.
         if (view.getShowGuidesToggle().isSelected()) {
-            Component[] components = view.getNumberPanel().getComponents();
-            for (Component comp : components) {
+            for (Component comp : view.getNumberPanel().getComponents()) {
                 if (comp instanceof JButton) {
                     JButton numberButton = (JButton) comp;
                     int number = Integer.parseInt(numberButton.getText());
                     if (board.isValidMove(selectedRow, selectedCol, number)) {
-                        // Highlight valid moves with a light green background.
                         numberButton.setBackground(new Color(144, 238, 144));
                     } else {
-                        // Reset to default background.
                         numberButton.setBackground(UIManager.getColor("Button.background"));
                     }
                 }
             }
         } else {
-            // If guide option is not enabled, ensure all buttons have default background.
             resetNumberButtonHighlights();
         }
     }
 
-    /**
-     * Resets the background of all number buttons to the default color.
-     */
     private void resetNumberButtonHighlights() {
-        Component[] components = view.getNumberPanel().getComponents();
-        for (Component comp : components) {
+        for (Component comp : view.getNumberPanel().getComponents()) {
             if (comp instanceof JButton) {
                 ((JButton) comp).setBackground(UIManager.getColor("Button.background"));
             }
         }
     }
 
-    /**
-     * Opens a dialog to select difficulty and generate a new puzzle.
-     */
-    public void showNewGameDialog() {
+    private void showNewGameDialog() {
         String[] options = {"Easy", "Medium", "Hard"};
         int choice = JOptionPane.showOptionDialog(
                 view,
@@ -197,19 +158,14 @@ public class SudokuController {
                     break;
             }
             board = PuzzleGenerator.generatePuzzle(selectedDifficulty);
-            view.updateBoard(board.getBoard());
-            // Reset cell selection.
+            view.updateBoard(board.getBoard(), board.getAnnotations());
             selectedRow = -1;
             selectedCol = -1;
             resetNumberButtonHighlights();
-            // Store a deep copy of the initial puzzle state for restarting.
             initialBoardState = deepCopy(board.getBoard());
         }
     }
 
-    /**
-     * Displays a dialog upon puzzle completion, offering to restart the current puzzle or start a new game.
-     */
     private void showGameCompletedDialog() {
         Object[] options = {"Restart", "New Game"};
         int choice = JOptionPane.showOptionDialog(
@@ -223,22 +179,14 @@ public class SudokuController {
                 options[0]
         );
         if (choice == JOptionPane.YES_OPTION) {
-            // Restart: reset the board to the initial puzzle state.
             board.resetBoard(deepCopy(initialBoardState));
-            view.updateBoard(board.getBoard());
+            view.updateBoard(board.getBoard(), board.getAnnotations());
             resetNumberButtonHighlights();
         } else if (choice == JOptionPane.NO_OPTION) {
-            // Start a new game.
             showNewGameDialog();
         }
     }
 
-    /**
-     * Utility method to create a deep copy of a 2D array.
-     *
-     * @param original the original 2D array.
-     * @return a deep copy of the array.
-     */
     private int[][] deepCopy(int[][] original) {
         int[][] copy = new int[original.length][original[0].length];
         for (int i = 0; i < original.length; i++) {
