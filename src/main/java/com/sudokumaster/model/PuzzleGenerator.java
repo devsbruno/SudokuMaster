@@ -7,10 +7,8 @@ import java.util.Random;
 
 /**
  * Utility class for generating Sudoku puzzles with a unique solution.
- *
- * Note: This implementation uses a backtracking algorithm to generate a complete board
- * and then removes a number of cells based on the selected difficulty.
- * Further validation for ensuring a unique solution should be implemented in a production system.
+ * This implementation uses backtracking to generate a complete board,
+ * then removes cells based on the selected difficulty.
  */
 public class PuzzleGenerator {
 
@@ -27,15 +25,28 @@ public class PuzzleGenerator {
         // Fill board completely with a valid solution using backtracking.
         fillBoard(board.getBoard());
 
-        // Determine number of cells to remove based on difficulty.
-        int removals = switch (difficulty) {
-            case EASY -> 30;
-            case MEDIUM -> 40;
-            case HARD -> 50;
-        };
+        // Determine the number of cells to remove based on difficulty.
+        int removals = 0;
+        switch (difficulty) {
+            case EASY:
+                removals = 30;
+                break;
+            case MEDIUM:
+                removals = 40;
+                break;
+            case HARD:
+                removals = 50;
+                break;
+        }
 
         // Remove cells randomly.
         removeNumbers(board.getBoard(), removals);
+
+        // Validate the board to ensure it adheres to Sudoku rules.
+        // If validation fails, regenerate the puzzle.
+        if (!validateBoard(board.getBoard())) {
+            return generatePuzzle(difficulty);
+        }
 
         return board;
     }
@@ -45,7 +56,7 @@ public class PuzzleGenerator {
      *
      * @param board 2D int array representing the Sudoku board.
      * @return true if the board is successfully filled.
-     **/
+     */
     private static boolean fillBoard(int[][] board) {
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
@@ -60,17 +71,17 @@ public class PuzzleGenerator {
                             board[row][col] = 0;
                         }
                     }
-                    return false; // Backtrack if no valid number found.
+                    return false; // Trigger backtracking.
                 }
             }
         }
-        return true; // Board filled.
+        return true; // All cells filled.
     }
 
     /**
      * Checks if placing a number at the given row and column is valid.
      *
-     * @param board  2D array representing the board.
+     * @param board  2D int array representing the board.
      * @param row    Row index.
      * @param col    Column index.
      * @param number Number to place.
@@ -83,7 +94,7 @@ public class PuzzleGenerator {
                 return false;
             }
         }
-        // Check 3x3 subgrid.
+        // Check the 3x3 subgrid.
         int blockRowStart = (row / 3) * 3;
         int blockColStart = (col / 3) * 3;
         for (int i = blockRowStart; i < blockRowStart + 3; i++) {
@@ -126,5 +137,54 @@ public class PuzzleGenerator {
                 count++;
             }
         }
+    }
+
+    /**
+     * Validates the board to ensure that each row, column, and 3x3 block contains unique numbers.
+     * This method checks only non-zero entries.
+     *
+     * @param board the board to validate.
+     * @return true if the board is valid, false otherwise.
+     */
+    public static boolean validateBoard(int[][] board) {
+        // Validate rows and columns.
+        for (int i = 0; i < 9; i++) {
+            boolean[] rowCheck = new boolean[10]; // indices 1-9.
+            boolean[] colCheck = new boolean[10];
+            for (int j = 0; j < 9; j++) {
+                int rowVal = board[i][j];
+                int colVal = board[j][i];
+                if (rowVal != 0) {
+                    if (rowCheck[rowVal]) {
+                        return false;
+                    }
+                    rowCheck[rowVal] = true;
+                }
+                if (colVal != 0) {
+                    if (colCheck[colVal]) {
+                        return false;
+                    }
+                    colCheck[colVal] = true;
+                }
+            }
+        }
+        // Validate 3x3 blocks.
+        for (int blockRow = 0; blockRow < 3; blockRow++) {
+            for (int blockCol = 0; blockCol < 3; blockCol++) {
+                boolean[] blockCheck = new boolean[10];
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        int val = board[blockRow * 3 + i][blockCol * 3 + j];
+                        if (val != 0) {
+                            if (blockCheck[val]) {
+                                return false;
+                            }
+                            blockCheck[val] = true;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 }
